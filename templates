@@ -1,0 +1,81 @@
+!DOCTYPE html>
+<html>
+<head>
+    <title>KVK Zoeker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>KVK Zoeker</h1>
+        <div class="card p-4">
+            <form id="zoekForm">
+                <div class="mb-3">
+                    <label for="kvk_nummer" class="form-label">KVK Nummer:</label>
+                    <input type="text" class="form-control" id="kvk_nummer" name="kvk_nummer">
+                </div>
+                <div class="mb-3">
+                    <label for="bedrijfsnaam" class="form-label">Bedrijfsnaam:</label>
+                    <input type="text" class="form-control" id="bedrijfsnaam" name="bedrijfsnaam">
+                </div>
+                <button type="submit" class="btn btn-primary">Zoeken</button>
+            </form>
+            <div id="resultaat" class="mt-4"></div>
+            <!-- Kopieerknop toegevoegd -->
+            <button id="kopieerKnop" class="btn btn-secondary mt-3" style="display: none;">
+                📋 Kopieer Resultaat
+            </button>
+            <!-- Kopieerstatus melding -->
+            <div id="kopieerstatus" class="alert alert-success mt-2" style="display: none;">
+                Gekopieerd naar klembord!
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('zoekForm').onsubmit = function(e) {
+            e.preventDefault();
+            
+            fetch('/zoek', {
+                method: 'POST',
+                body: new FormData(this)
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultaat = document.getElementById('resultaat');
+                const kopieerKnop = document.getElementById('kopieerKnop');
+                
+                if (data.resultaten && data.resultaten.length > 0) {
+                    const bedrijf = data.resultaten[0];
+                    const resultaatHTML = `
+                        <h4>Resultaat:</h4>
+                        <p><strong>KVK Nummer:</strong> ${bedrijf.kvkNummer}</p>
+                        <p><strong>Naam:</strong> ${bedrijf.naam}</p>
+                        <p><strong>Adres:</strong> ${bedrijf.adres?.binnenlandsAdres?.straatnaam || ''} 
+                            ${bedrijf.adres?.binnenlandsAdres?.plaats || ''}</p>
+                    `;
+                    resultaat.innerHTML = resultaatHTML;
+                    kopieerKnop.style.display = 'block'; // Toon kopieerknop
+                } else {
+                    resultaat.innerHTML = '<p>Geen resultaten gevonden</p>';
+                    kopieerKnop.style.display = 'none'; // Verberg kopieerknop
+                }
+            });
+        };
+
+        // Kopieer functionaliteit
+        document.getElementById('kopieerKnop').onclick = function() {
+            const resultaatTekst = document.getElementById('resultaat').innerText;
+            navigator.clipboard.writeText(resultaatTekst).then(() => {
+                // Toon kopieerstatus
+                const kopieerstatus = document.getElementById('kopieerstatus');
+                kopieerstatus.style.display = 'block';
+                
+                // Verberg status na 2 seconden
+                setTimeout(() => {
+                    kopieerstatus.style.display = 'none';
+                }, 2000);
+            });
+        };
+    </script>
+</body>
+</html>
